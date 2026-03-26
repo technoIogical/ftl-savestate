@@ -9,10 +9,10 @@ A simple, cross-platform Electron application to manage save states for *FTL: Fa
 - **Run vs Profile**: Manage your active game sessions and global stats separately.
 
 ## How to Use
-1. **Run**: Use `start.bat` (Windows) or `npm start`.
+1. **Run**: Launch the `ftl-save-manager.exe` (or use `start.bat` / `npm start` if running from source).
 2. **Create State**: Enter a name and click "New Run State".
 3. **Load State**: Click a state to expand it, then click **Load State**.
-   - *Note: You must be at the FTL Main Menu for the new save to take effect.*
+   - *Note: You must be at the FTL Main Menu for the new save to take effect, or restart the game.*
 4. **Update State**: Click **Update (Save Here)** to overwrite an existing slot with your current game progress.
 
 ## Syncing Across Devices (Google Drive / OneDrive)
