@@ -290,10 +290,14 @@
             const input = document.getElementById('run-name');
             const name = input.value.trim();
             if (!name) return;
-            await ipcRenderer.invoke('create-state', name, type);
-            input.value = '';
-            expandedState = name;
-            updateList();
+            const result = await ipcRenderer.invoke('create-state', name, type);
+            if (!result.success) {
+                alert(`Error: ${result.error}`);
+            } else {
+                input.value = '';
+                expandedState = name;
+                updateList();
+            }
         }
 
         async function loadState(name) {

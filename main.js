@@ -67,32 +67,70 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('get-states', async () => {
     if (!fs.existsSync(STATES_PATH)) return [];
-    return fs.readdirSync(STATES_PATH)
-        .filter(f => fs.statSync(path.join(STATES_PATH, f)).isDirectory())
-        .map(name => ({
-            name,
-            ctime: fs.statSync(path.join(STATES_PATH, name)).ctime
-        }))
-        .sort((a, b) => b.ctime - a.ctime);
+    try {
+        return fs.readdirSync(STATES_PATH)
+            .filter(f => {
+                try {
+                    return fs.statSync(path.join(STATES_PATH, f)).isDirectory();
+                } catch (e) {
+                    return false;
+                }
+            })
+            .map(name => {
+                try {
+                    const stats = fs.statSync(path.join(STATES_PATH, name));
+                    return { name, ctime: stats.ctime };
+                } catch (e) {
+                    return null;
+                }
+            })
+            .filter(s => s !== null)
+            .sort((a, b) => b.ctime - a.ctime);
+    } catch (e) {
+        console.error(`Failed to get states: ${e.message}`);
+        return [];
+    }
 });
 
 ipcMain.handle('create-state', async (event, name, type) => {
-    const stateDir = path.join(STATES_PATH, name);
-    if (!fs.existsSync(stateDir)) fs.mkdirSync(stateDir);
+    try {
+        // Sanitize name: remove invalid characters for file systems
+        const sanitizedName = name.replace(/[<>:"/\\|?*]/g, '').trim();
+        if (!sanitizedName) return { success: false, error: 'Invalid state name.' };
 
-    const filesInDir = fs.readdirSync(FTL_PATH);
-    const filesToCopy = type === 'run'
-        ? filesInDir.filter(f => f.toLowerCase().endsWith('continue.sav'))
-        : filesInDir.filter(f => (f.toLowerCase().endsWith('.sav') && !f.toLowerCase().endsWith('continue.sav')) || f.toLowerCase().includes('version'));
+        const stateDir = path.join(STATES_PATH, sanitizedName);
 
-    filesToCopy.forEach(file => {
-        const src = path.join(FTL_PATH, file);
-        fs.copyFileSync(src, path.join(stateDir, file));
-    });
+        // Ensure parent exists first
+        if (!fs.existsSync(STATES_PATH)) {
+            fs.mkdirSync(STATES_PATH, { recursive: true });
+        }
 
-    settings.activeState = name;
-    fs.writeFileSync(settingsPath, JSON.stringify(settings));
-    return true;
+        if (!fs.existsSync(stateDir)) {
+            fs.mkdirSync(stateDir, { recursive: true });
+        }
+
+        const filesInDir = fs.readdirSync(FTL_PATH);
+        const filesToCopy = type === 'run'
+            ? filesInDir.filter(f => f.toLowerCase().endsWith('continue.sav'))
+            : filesInDir.filter(f => (f.toLowerCase().endsWith('.sav') && !f.toLowerCase().endsWith('continue.sav')) || f.toLowerCase().includes('version'));
+
+        if (filesToCopy.length === 0) {
+            console.warn(`No files found to copy for type ${type} in ${FTL_PATH}`);
+            return { success: false, error: 'No save files found in FTL folder.' };
+        }
+
+        filesToCopy.forEach(file => {
+            const src = path.join(FTL_PATH, file);
+            fs.copyFileSync(src, path.join(stateDir, file));
+        });
+
+        settings.activeState = name;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings));
+        return { success: true };
+    } catch (e) {
+        console.error(`Create state failed: ${e.message}`);
+        return { success: false, error: e.message };
+    }
 });
 
 ipcMain.handle('load-state', async (event, name) => {
