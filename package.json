@@ -1,6 +1,6 @@
 {
     "name": "ftl-save-manager",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "description": "Cross-platform save state manager for FTL and Multiverse",
     "main": "main.js",
     "scripts": {
@@ -9,6 +9,13 @@
     },
     "build": {
         "appId": "com.ftl.savemanager",
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "technoIogical",
+                "repo": "ftl-savestate"
+            }
+        ],
         "win": {
             "target": "portable"
         },
