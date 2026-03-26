@@ -1,6 +1,6 @@
 {
     "name": "ftl-save-manager",
-    "version": "1.0.9",
+    "version": "1.1.0",
     "description": "Cross-platform save state manager for FTL and Multiverse",
     "main": "main.js",
     "scripts": {

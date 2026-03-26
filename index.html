@@ -214,6 +214,25 @@
         .btn-danger:hover {
             background: #b71c1c;
         }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 5px;
+            border: 2px solid #121212;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
     </style>
 </head>
 
@@ -314,8 +333,12 @@
 
         async function updateExistingState(name) {
             if (confirm(`Overwrite "${name}" with your CURRENT game progress?`)) {
-                await ipcRenderer.invoke('create-state', name, 'run');
-                updateList();
+                const result = await ipcRenderer.invoke('create-state', name, 'run');
+                if (!result.success) {
+                    alert(`Error: ${result.error}`);
+                } else {
+                    updateList();
+                }
             }
         }
 
