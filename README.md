@@ -12,20 +12,24 @@ A simple, cross-platform Electron application to manage save states for *FTL: Fa
 1. **Run**: Launch the `ftl-save-manager.exe` (or use `start.bat` / `npm start` if running from source).
 2. **Create State**: Enter a name and click "New Run State".
 3. **Load State**: Click a state to expand it, then click **Load State**.
-   - *Note: You must be at the FTL Main Menu for the new save to take effect, or restart the game.*
+   - *Note: You must be at the FTL Main Menu for the new save to take effect.*
 4. **Update State**: Click **Update (Save Here)** to overwrite an existing slot with your current game progress.
 
 ## Syncing Across Devices (Google Drive / OneDrive)
 1. Install the desktop app for your cloud provider (e.g., Google Drive for Desktop).
 2. In the Save State Manager, click **"Change States Folder"**.
 3. Select a folder inside your cloud directory (e.g., `G:\My Drive\FTLSaves`).
-4. Repeat on your other devices using the same cloud folder. Your list of states will now be mirrored.
+4. Repeat on your other devices using the same cloud folder. Your list of states will now automatically mirror.
 
 ## Installation
-1. Download the latest `ftl-save-manager.exe` from the **Releases** tab on GitHub.
-2. Run the executable.
+1. Go to the **Releases** tab on GitHub.
+2. Download the `ftl-save-manager.exe` (Windows) or `.dmg` (macOS).
+3. Run the application.
 
 ## Development
 - Clone the repo.
 - Run `npm install`.
 - Use `npm start` to run or `npm run build` to create a portable executable in the `dist/` folder.
+
+### Automatic Builds (GitHub Actions)
+Whenever you push a new tag starting with `v` (e.g., `v1.0.0`), GitHub Actions will automatically compile the application for both **Windows** and **macOS** and create a new Release for you.
