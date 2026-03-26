@@ -164,7 +164,9 @@ ipcMain.handle('open-save-folder', async () => {
 ipcMain.handle('select-states-folder', async () => {
     const { dialog } = require('electron');
     const result = await dialog.showOpenDialog({
-        properties: ['openDirectory']
+        title: 'Select Save States Folder',
+        buttonLabel: 'Select Folder',
+        properties: ['openDirectory', 'createDirectory']
     });
     if (!result.canceled && result.filePaths.length > 0) {
         STATES_PATH = result.filePaths[0];
@@ -187,4 +189,8 @@ ipcMain.handle('is-ftl-running', async () => {
             resolve(stdout && stdout.toLowerCase().includes('ftlgame'));
         });
     });
+});
+
+ipcMain.handle('get-current-states-path', async () => {
+    return STATES_PATH;
 });

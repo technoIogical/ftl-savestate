@@ -22,12 +22,18 @@
 
         .toolbar {
             display: flex;
+            flex-direction: column;
             gap: 10px;
             margin-bottom: 20px;
-            align-items: center;
             background: #1e1e1e;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
+        }
+
+        .toolbar-top {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .toolbar button {
@@ -49,14 +55,11 @@
         }
 
         #current-states-path {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #888;
-            flex-grow: 1;
-            text-align: right;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            max-width: 300px;
         }
 
         .section {
@@ -218,9 +221,11 @@
     <h1>FTL Save State Manager</h1>
 
     <div class="toolbar">
-        <button onclick="openSaveFolder()">FTL Folder</button>
-        <button onclick="selectStatesFolder()">Change States Folder</button>
-        <button class="sync-btn" onclick="updateList()">Refresh (Sync)</button>
+        <div class="toolbar-top">
+            <button onclick="openSaveFolder()">FTL Folder</button>
+            <button onclick="selectStatesFolder()">Change States Folder</button>
+            <button class="sync-btn" onclick="updateList()">Refresh (Sync)</button>
+        </div>
         <span id="current-states-path"></span>
     </div>
 
@@ -332,7 +337,7 @@
 
         async function updatePathDisplay() {
             const path = await ipcRenderer.invoke('get-current-states-path');
-            document.getElementById('current-states-path').innerText = `States: ${path}`;
+            document.getElementById('current-states-path').innerText = `States Folder: ${path || 'Not Set'}`;
         }
 
         updateList();
