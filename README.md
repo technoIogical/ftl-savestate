@@ -31,5 +31,3 @@ A simple, cross-platform Electron application to manage save states for *FTL: Fa
 - Run `npm install`.
 - Use `npm start` to run or `npm run build` to create a portable executable in the `dist/` folder.
 
-### Automatic Builds (GitHub Actions)
-Whenever you push a new tag starting with `v` (e.g., `v1.0.0`), GitHub Actions will automatically compile the application for both **Windows** and **macOS** and create a new Release for you.
