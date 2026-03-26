@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>FTL Save State Manager</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 20px 0;
+            color: #fff;
+            font-weight: 400;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .toolbar button {
+            background: #333;
+            font-size: 0.85rem;
+            padding: 6px 12px;
+        }
+
+        .toolbar button:hover {
+            background: #444;
+        }
+
+        .toolbar .sync-btn {
+            background: #2e7d32;
+        }
+
+        .toolbar .sync-btn:hover {
+            background: #388e3c;
+        }
+
+        #current-states-path {
+            font-size: 0.75rem;
+            color: #888;
+            flex-grow: 1;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 300px;
+        }
+
+        .section {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .section h2 {
+            font-size: 1rem;
+            margin-top: 0;
+            color: #bbb;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            background: #2a2a2a;
+            color: white;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 4px;
+            flex-grow: 1;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input:focus {
+            border-color: #007bff;
+        }
+
+        .state-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .state-item {
+            background: #252525;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 4px solid #444;
+            cursor: pointer;
+            transition: background 0.2s;
+            overflow: hidden;
+        }
+
+        .state-item.active {
+            border-left-color: #007bff;
+            background: #2a2a2a;
+        }
+
+        .state-item:hover {
+            background: #2a2a2a;
+        }
+
+        .state-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+        }
+
+        .state-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .state-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 3px;
+        }
+
+        .state-date {
+            font-size: 0.75rem;
+            color: #777;
+        }
+
+        .active-label {
+            font-size: 0.65rem;
+            background: #007bff;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .state-menu {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.3s ease-out;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+        }
+
+        .state-menu-inner {
+            overflow: hidden;
+            display: flex;
+            gap: 8px;
+            padding: 0 10px;
+            transition: padding 0.3s ease-out;
+        }
+
+        .state-item.expanded .state-menu {
+            grid-template-rows: 1fr;
+        }
+
+        .state-item.expanded .state-menu-inner {
+            padding: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .btn-update {
+            background: #ef6c00;
+        }
+
+        .btn-update:hover {
+            background: #e65100;
+        }
+
+        .btn-danger {
+            background: #c62828;
+        }
+
+        .btn-danger:hover {
+            background: #b71c1c;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>FTL Save State Manager</h1>
+
+    <div class="toolbar">
+        <button onclick="openSaveFolder()">FTL Folder</button>
+        <button onclick="selectStatesFolder()">Change States Folder</button>
+        <button class="sync-btn" onclick="updateList()">Refresh (Sync)</button>
+        <span id="current-states-path"></span>
+    </div>
+
+    <div class="section">
+        <h2>Save States</h2>
+        <div class="controls">
+            <input type="text" id="run-name" placeholder="Name your state">
+            <button class="btn-primary" onclick="createState('run')">New Run State</button>
+            <button class="btn-primary" onclick="createState('profile')">New Profile State</button>
+        </div>
+        <ul id="state-list" class="state-list"></ul>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        let expandedState = null;
+
+        async function updateList() {
+            const list = document.getElementById('state-list');
+            const states = await ipcRenderer.invoke('get-states');
+            const activeName = await ipcRenderer.invoke('get-active-state');
+
+            list.innerHTML = '';
+            states.forEach(state => {
+                const isActive = state.name === activeName;
+                const isExpanded = state.name === expandedState;
+
+                const li = document.createElement('li');
+                li.className = `state-item ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}`;
+                const dateStr = new Date(state.ctime).toLocaleString();
+
+                li.innerHTML = `
+                    <div class="state-header" onclick="toggleExpand('${state.name}')">
+                        <div class="state-info">
+                            <div style="display: flex; align-items: center;">
+                                <span class="state-name">${state.name}</span>
+                                ${isActive ? '<span class="active-label">Active</span>' : ''}
+                            </div>
+                            <span class="state-date">${dateStr}</span>
+                        </div>
+                        <span style="font-size: 0.8rem; color: #555;">${isExpanded ? '▲' : '▼'}</span>
+                    </div>
+                    <div class="state-menu">
+                        <div class="state-menu-inner">
+                            <button class="btn-primary" onclick="loadState('${state.name}')">Load State</button>
+                            <button class="btn-update" onclick="updateExistingState('${state.name}')">Update (Save Here)</button>
+                            <button class="btn-danger" onclick="deleteState('${state.name}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function toggleExpand(name) {
+            expandedState = expandedState === name ? null : name;
+            updateList();
+        }
+
+        async function createState(type) {
+            const input = document.getElementById('run-name');
+            const name = input.value.trim();
+            if (!name) return;
+            await ipcRenderer.invoke('create-state', name, type);
+            input.value = '';
+            expandedState = name;
+            updateList();
+        }
+
+        async function loadState(name) {
+            const isRunning = await ipcRenderer.invoke('is-ftl-running');
+            const msg = isRunning
+                ? `WARNING: FTL is currently running! Loading a state while in-game may not work or could cause a crash. \n\nAre you sure you want to LOAD state "${name}"?`
+                : `Are you sure you want to LOAD state "${name}"? This will overwrite your current save.`;
+
+            if (confirm(msg)) {
+                await ipcRenderer.invoke('load-state', name);
+                setTimeout(updateList, 100);
+            }
+        }
+
+        async function updateExistingState(name) {
+            if (confirm(`Overwrite "${name}" with your CURRENT game progress?`)) {
+                await ipcRenderer.invoke('create-state', name, 'run');
+                updateList();
+            }
+        }
+
+        async function deleteState(name) {
+            if (confirm(`Delete state "${name}"?`)) {
+                await ipcRenderer.invoke('delete-state', name);
+                if (expandedState === name) expandedState = null;
+                updateList();
+            }
+        }
+
+        async function openSaveFolder() {
+            await ipcRenderer.invoke('open-save-folder');
+        }
+
+        async function selectStatesFolder() {
+            const newPath = await ipcRenderer.invoke('select-states-folder');
+            if (newPath) {
+                updatePathDisplay();
+                updateList();
+            }
+        }
+
+        async function updatePathDisplay() {
+            const path = await ipcRenderer.invoke('get-current-states-path');
+            document.getElementById('current-states-path').innerText = `States: ${path}`;
+        }
+
+        updateList();
+        updatePathDisplay();
+
+        setInterval(updateList, 30000);
+    </script>
+</body>
+
+</html>
