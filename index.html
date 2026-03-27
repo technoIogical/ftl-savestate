@@ -75,6 +75,9 @@
             color: #bbb;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .controls {
@@ -141,9 +144,15 @@
             margin-bottom: 3px;
         }
 
-        .state-date {
+        .state-meta {
             font-size: 0.75rem;
-            color: #777;
+            color: #aaa;
+            margin-bottom: 2px;
+        }
+
+        .state-date {
+            font-size: 0.7rem;
+            color: #666;
         }
 
         .active-label {
@@ -233,6 +242,53 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #444;
         }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            margin-left: 10px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #2e7d32;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
     </style>
 </head>
 
@@ -244,6 +300,13 @@
             <button onclick="openSaveFolder()">FTL Folder</button>
             <button onclick="selectStatesFolder()">Change States Folder</button>
             <button class="sync-btn" onclick="updateList()">Refresh (Sync)</button>
+            <div style="margin-left: auto; display: flex; align-items: center; font-size: 0.85rem; color: #bbb;">
+                Auto-Backup (5m)
+                <label class="switch">
+                    <input type="checkbox" id="auto-backup-toggle" onchange="toggleAutoBackup()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
         <span id="current-states-path"></span>
     </div>
@@ -277,6 +340,12 @@
                 li.className = `state-item ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}`;
                 const dateStr = new Date(state.ctime).toLocaleString();
 
+                let infoText = '';
+                if (state.info) {
+                    const shipType = state.info.shipType.replace('PLAYER_SHIP_', '').replace(/_/g, ' ');
+                    infoText = `<span class="state-meta">${state.info.shipName} [${shipType}] - Sector ${state.info.sector}</span>`;
+                }
+
                 li.innerHTML = `
                     <div class="state-header" onclick="toggleExpand('${state.name}')">
                         <div class="state-info">
@@ -284,6 +353,7 @@
                                 <span class="state-name">${state.name}</span>
                                 ${isActive ? '<span class="active-label">Active</span>' : ''}
                             </div>
+                            ${infoText}
                             <span class="state-date">${dateStr}</span>
                         </div>
                         <span style="font-size: 0.8rem; color: #555;">${isExpanded ? '▲' : '▼'}</span>
@@ -305,15 +375,15 @@
             updateList();
         }
 
-        async function createState(type) {
+        async function createState(type, nameOverride) {
             const input = document.getElementById('run-name');
-            const name = input.value.trim();
+            const name = nameOverride || input.value.trim();
             if (!name) return;
             const result = await ipcRenderer.invoke('create-state', name, type);
             if (!result.success) {
-                alert(`Error: ${result.error}`);
+                if (!nameOverride) alert(`Error: ${result.error}`);
             } else {
-                input.value = '';
+                if (!nameOverride) input.value = '';
                 expandedState = name;
                 updateList();
             }
@@ -322,7 +392,7 @@
         async function loadState(name) {
             const isRunning = await ipcRenderer.invoke('is-ftl-running');
             const msg = isRunning
-                ? `WARNING: FTL is currently running! Loading a state while in-game may not work or could cause a crash. \n\nAre you sure you want to LOAD state "${name}"?`
+                ? `WARNING: FTL is currently running! \n\nAre you sure you want to LOAD state "${name}"?`
                 : `Are you sure you want to LOAD state "${name}"? This will overwrite your current save.`;
 
             if (confirm(msg)) {
@@ -350,16 +420,11 @@
             }
         }
 
-        async function openSaveFolder() {
-            await ipcRenderer.invoke('open-save-folder');
-        }
+        async function openSaveFolder() { await ipcRenderer.invoke('open-save-folder'); }
 
         async function selectStatesFolder() {
             const newPath = await ipcRenderer.invoke('select-states-folder');
-            if (newPath) {
-                updatePathDisplay();
-                updateList();
-            }
+            if (newPath) { updatePathDisplay(); updateList(); }
         }
 
         async function updatePathDisplay() {
@@ -367,10 +432,28 @@
             document.getElementById('current-states-path').innerText = `States Folder: ${path || 'Not Set'}`;
         }
 
-        updateList();
-        updatePathDisplay();
+        async function toggleAutoBackup() {
+            const enabled = document.getElementById('auto-backup-toggle').checked;
+            await ipcRenderer.invoke('update-settings', { autoBackup: enabled });
+        }
+
+        async function init() {
+            const settings = await ipcRenderer.invoke('get-settings');
+            document.getElementById('auto-backup-toggle').checked = settings.autoBackup;
+            updateList();
+            updatePathDisplay();
+        }
+
+        init();
 
         setInterval(updateList, 30000);
+
+        setInterval(async () => {
+            const settings = await ipcRenderer.invoke('get-settings');
+            if (settings.autoBackup) {
+                await createState('run', 'Auto-Backup');
+            }
+        }, 300000); // 5 minutes
     </script>
 </body>
 
