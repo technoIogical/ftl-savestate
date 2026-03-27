@@ -1,4 +1,5 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -39,8 +40,25 @@ const DEFAULT_STATES_PATH = path.join(FTL_PATH, 'SaveStates');
 let STATES_PATH = settings.statesPath || DEFAULT_STATES_PATH;
 
 function ensureStatesDir() {
-    if (!fs.existsSync(STATES_PATH)) {
-        fs.mkdirSync(STATES_PATH, { recursive: true });
+    try {
+        // Guard: check if the drive/path is accessible at all
+        const root = path.parse(STATES_PATH).root;
+        if (root && !fs.existsSync(root)) {
+            throw new Error('Drive not mounted');
+        }
+
+        if (!fs.existsSync(STATES_PATH)) {
+            fs.mkdirSync(STATES_PATH, { recursive: true });
+        }
+    } catch (err) {
+        console.error('States path inaccessible, resetting to default:', err);
+        STATES_PATH = DEFAULT_STATES_PATH;
+        settings.statesPath = DEFAULT_STATES_PATH;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings));
+
+        if (!fs.existsSync(STATES_PATH)) {
+            fs.mkdirSync(STATES_PATH, { recursive: true });
+        }
     }
 }
 ensureStatesDir();
@@ -51,6 +69,7 @@ function createWindow() {
     const win = new BrowserWindow({
         width: 900,
         height: 700,
+        icon: path.join(__dirname, 'build/icon.png'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -58,6 +77,17 @@ function createWindow() {
     });
 
     win.loadFile('index.html');
+
+    // ── Auto-Updater Logic ──────────
+    autoUpdater.checkForUpdatesAndNotify();
+
+    autoUpdater.on('update-available', () => {
+        win.webContents.send('update-available');
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        win.webContents.send('update-ready');
+    });
 }
 
 app.whenReady().then(createWindow);
@@ -231,6 +261,14 @@ ipcMain.handle('get-current-states-path', async () => {
     return STATES_PATH;
 });
 
+ipcMain.handle('reset-states-path', async () => {
+    STATES_PATH = DEFAULT_STATES_PATH;
+    settings.statesPath = DEFAULT_STATES_PATH;
+    fs.writeFileSync(settingsPath, JSON.stringify(settings));
+    ensureStatesDir();
+    return STATES_PATH;
+});
+
 ipcMain.handle('is-ftl-running', async () => {
     const { exec } = require('child_process');
     const command = process.platform === 'win32' ? 'tasklist /FI "IMAGENAME eq FTLGame.exe" /NH' : 'pgrep FTLGame';
@@ -247,4 +285,8 @@ ipcMain.handle('update-settings', async (event, newSettings) => {
     settings = { ...settings, ...newSettings };
     fs.writeFileSync(settingsPath, JSON.stringify(settings));
     return settings;
+});
+
+ipcMain.on('quit-and-install', () => {
+    autoUpdater.quitAndInstall();
 });

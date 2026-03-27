@@ -34,6 +34,19 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .toolbar-bottom {
+            display: flex;
+            align-items: center;
+        }
+
+        #current-states-path {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 80%;
         }
 
         .toolbar button {
@@ -293,6 +306,13 @@
 </head>
 
 <body>
+    <div id="update-banner"
+        style="display: none; background: #2a475e; color: white; padding: 10px; text-align: center; font-size: 0.9rem; border-bottom: 2px solid #66c0f4;">
+        <span id="update-text">An update is available! Downloading...</span>
+        <button id="update-btn"
+            style="display: none; margin-left: 15px; background: #66c0f4; color: black; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;"
+            onclick="quitAndInstall()">Restart to Update</button>
+    </div>
     <h1>FTL Save State Manager</h1>
 
     <div class="toolbar">
@@ -308,7 +328,11 @@
                 </label>
             </div>
         </div>
-        <span id="current-states-path"></span>
+        <div class="toolbar-bottom">
+            <span id="current-states-path" style="font-size: 0.75rem; color: #888;"></span>
+            <a href="#" onclick="resetStatesPath()"
+                style="font-size: 0.75rem; color: #555; margin-left: 10px; text-decoration: none;">Reset to Default</a>
+        </div>
     </div>
 
     <div class="section">
@@ -427,6 +451,14 @@
             if (newPath) { updatePathDisplay(); updateList(); }
         }
 
+        async function resetStatesPath() {
+            if (confirm("Reset Save States folder to default local location?")) {
+                await ipcRenderer.invoke('reset-states-path');
+                updatePathDisplay();
+                updateList();
+            }
+        }
+
         async function updatePathDisplay() {
             const path = await ipcRenderer.invoke('get-current-states-path');
             document.getElementById('current-states-path').innerText = `States Folder: ${path || 'Not Set'}`;
@@ -442,6 +474,19 @@
             document.getElementById('auto-backup-toggle').checked = settings.autoBackup;
             updateList();
             updatePathDisplay();
+        }
+
+        ipcRenderer.on('update-available', () => {
+            document.getElementById('update-banner').style.display = 'block';
+        });
+
+        ipcRenderer.on('update-ready', () => {
+            document.getElementById('update-text').innerText = 'Update downloaded and ready!';
+            document.getElementById('update-btn').style.display = 'inline-block';
+        });
+
+        function quitAndInstall() {
+            ipcRenderer.send('quit-and-install');
         }
 
         init();

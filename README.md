@@ -26,8 +26,3 @@ A simple, cross-platform Electron application to manage save states for *FTL: Fa
 2. Download the `ftl-save-manager.exe` (Windows) or `.dmg` (macOS).
 3. Run the application.
 
-## Development
-- Clone the repo.
-- Run `npm install`.
-- Use `npm start` to run or `npm run build` to create a portable executable in the `dist/` folder.
-

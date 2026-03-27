@@ -1,6 +1,6 @@
 {
     "name": "ftl-save-manager",
-    "version": "1.1.0",
+    "version": "1.4.0",
     "description": "Cross-platform save state manager for FTL and Multiverse",
     "main": "main.js",
     "scripts": {
@@ -16,8 +16,21 @@
                 "repo": "ftl-savestate"
             }
         ],
+        "directories": {
+            "buildResources": "build"
+        },
         "win": {
-            "target": "portable"
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": "x64"
+                },
+                {
+                    "target": "portable",
+                    "arch": "x64"
+                }
+            ],
+            "icon": "build/icon.ico"
         },
         "mac": {
             "target": [
@@ -25,13 +38,16 @@
                     "target": "dmg",
                     "arch": "universal"
                 }
-            ]
+            ],
+            "icon": "build/icon.icns"
         },
         "linux": {
             "target": "AppImage"
         }
     },
-    "dependencies": {},
+    "dependencies": {
+        "electron-updater": "^6.8.3"
+    },
     "devDependencies": {
         "electron": "^30.0.0",
         "electron-builder": "^26.8.1"
