@@ -1,6 +1,6 @@
 {
     "name": "ftl-save-manager",
-    "version": "1.4.7",
+    "version": "1.4.9",
     "description": "Cross-platform save state manager for FTL and Multiverse",
     "main": "main.js",
     "scripts": {
@@ -20,14 +20,8 @@
             "buildResources": "build"
         },
         "win": {
-            "target": [
-                {
-                    "target": "nsis",
-                    "arch": "x64"
-                }
-            ],
-            "icon": "build/icon.ico",
-            "artifactName": "ftl-save-manager.${ext}"
+            "target": "nsis",
+            "icon": "build/icon.ico"
         },
         "nsis": {
             "oneClick": true,
