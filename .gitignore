@@ -4,5 +4,4 @@ test_saves/
 *.sav
 settings.json
 .DS_Store
-build
 plans

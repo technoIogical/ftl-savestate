@@ -1,6 +1,6 @@
 {
     "name": "ftl-save-manager",
-    "version": "1.4.3",
+    "version": "1.4.5",
     "description": "Cross-platform save state manager for FTL and Multiverse",
     "main": "main.js",
     "scripts": {
@@ -26,7 +26,8 @@
                     "arch": "x64"
                 }
             ],
-            "icon": "build/icon.ico"
+            "icon": "build/icon.ico",
+            "artifactName": "${productName}.${ext}"
         },
         "mac": {
             "target": [
@@ -35,7 +36,8 @@
                     "arch": "universal"
                 }
             ],
-            "icon": "build/icon.icns"
+            "icon": "build/icon.icns",
+            "artifactName": "${productName}.${ext}"
         },
         "linux": {
             "target": "AppImage"
