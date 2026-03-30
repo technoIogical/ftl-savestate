@@ -347,7 +347,7 @@
 
     <div id="version-tag" title="Up to date"
         style="position: fixed; bottom: 10px; right: 10px; font-size: 0.7rem; color: #555; cursor: help; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">
-        v1.4.5
+        v1.4.7
     </div>
     <script>
         const { ipcRenderer } = require('electron');
@@ -482,7 +482,7 @@
 
         ipcRenderer.on('update-available', () => {
             document.getElementById('update-banner').style.display = 'block';
-            document.getElementById('version-tag').innerText = 'v1.4.5 (Update Available)';
+            document.getElementById('version-tag').innerText = 'v1.4.7 (Update Available)';
             document.getElementById('version-tag').title = 'An update is being downloaded...';
             document.getElementById('version-tag').style.color = '#66c0f4';
         });
@@ -490,7 +490,7 @@
         ipcRenderer.on('update-ready', () => {
             document.getElementById('update-text').innerText = 'Update downloaded and ready!';
             document.getElementById('update-btn').style.display = 'inline-block';
-            document.getElementById('version-tag').innerText = 'v1.4.5 (Ready to Install)';
+            document.getElementById('version-tag').innerText = 'v1.4.7 (Ready to Install)';
             document.getElementById('version-tag').title = 'Click the blue button above to restart and update!';
         });
 
